@@ -1,0 +1,26 @@
+/* 齐云山 H5 · 基础样式（视觉变量统一在此，后续上色只改这里） */
+:root {
+  --forest: #2F5D3A;   /* 森林绿 */
+  --moss:   #8AA268;   /* 苔藓绿 */
+  --cream:  #F6F0E3;   /* 暖米白 */
+  --fruit:  #E85C2C;   /* 南酸枣橙红 */
+  --sun:    #F0B84A;   /* 暖黄 */
+  --ink:    #434B3E;   /* 正文：灰绿 */
+  --gray:   #6F7767;   /* 次要文字：灰 */
+  --radius: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  background: var(--forest);
+  color: var(--ink);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.hidden { display: none !important; }

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>齐云山 H5 · 完整修复版 R10</title>
+  <link rel="stylesheet" href="css/base.css?v=1024-r10">
+  <link rel="stylesheet" href="css/scenes.css?v=1024-r10">
+</head>
+<body>
+<div id="boot-status" role="status" style="position:fixed;inset:0;z-index:1000;background:#f6f0e3;color:#354b31;padding:12vh 24px;font:16px/1.7 sans-serif;white-space:pre-wrap;overflow:auto">正在启动齐云山 H5 · R10……</div>
+<script>
+(function(){
+  var box=document.getElementById('boot-status'),failed=false;
+  window.h5BootError=function(message){failed=true;box.style.display='block';box.textContent='齐云山 H5 · R10 启动检查\n\n'+message+'\n\n请保留这条提示。index.html、css、js、assets 必须位于同一个项目目录中。';};
+  window.addEventListener('error',function(e){
+    if(e.target && /^(SCRIPT|LINK)$/.test(e.target.tagName)) window.h5BootError('文件未能加载：'+(e.target.getAttribute('src')||e.target.getAttribute('href')));
+    else if(e.message) window.h5BootError('脚本运行错误：'+e.message+'\n位置：'+(e.filename||'')+':'+(e.lineno||''));
+  },true);
+  window.h5FinishBoot=function(){
+    if(failed)return;
+    if(getComputedStyle(document.documentElement).getPropertyValue('--h5-release').trim()!=='1024-r10'){window.h5BootError('css/scenes.css 未加载或不是 R10 版本。');return;}
+    var img=new Image();
+    img.onload=function(){if(!failed)box.style.display='none';};
+    img.onerror=function(){window.h5BootError('缺少素材：assets/scenes/a1.png。请将原项目的 assets 文件夹放在 index.html 旁边。');};
+    img.src='assets/scenes/a1.png';
+  };
+  setTimeout(function(){if(!window.H5_READY&&!failed)window.h5BootError('启动未完成，请检查 js/data.js 与 js/main.js 是否完整解压。');},8000);
+})();
+</script>
+  <div id="stage">
+    <div id="story-progress" aria-label="剧情进度"></div>
+    <img id="scene-leaf" src="assets/scenes/f8.png" alt="" class="hidden">
+    <div id="scene" class="scene"></div>
+
+    <header id="topbar">
+      <div class="brand">
+        <img width="46" height="26" id="logo" src="assets/logo.png" alt="齐云山">
+        <span id="badge">1023 · R10</span>
+      </div>
+      <div id="chapter">01｜遇见</div>
+    </header>
+
+    <div id="scene-hotspots" class="hidden"></div>
+    <p id="easter-note" class="hidden" role="status"></p>
+    <div id="product-view" class="hidden" role="dialog" aria-modal="true" aria-label="查看产品"><button id="product-close" aria-label="关闭产品大图">关闭 ×</button><img id="product-large" alt=""><p id="product-caption"></p></div>
+    <div id="ui">
+      <div id="scene-text" class="scene-text hidden"></div>
+
+      <div id="title-block" class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+
+      <div id="dialogue" class="dialogue hidden">
+        <div id="speaker" class="speaker"></div>
+        <p id="text" class="text"></p>
+      </div>
+
+      <div id="choices" class="choices hidden"></div>
+
+      <button id="big-btn" class="big-btn hidden"></button>
+
+      <div id="end-card" class="hidden">
+        <h2>预览结束</h2>
+        <p></p>
+      </div>
+
+      <div id="hint" class="hint hidden"></div>
+    </div>
+
+    <div id="transform" class="hidden">
+      <div id="tf-stage">
+        <img id="tf-fruit" class="tf-layer" alt="果实">
+        <img id="tf-cake" class="tf-layer" alt="糕体">
+        <img id="tf-product" class="tf-layer" alt="产品">
+      </div>
+      <p id="tf-caption"></p>
+      <div id="tf-track"><div id="tf-fill"></div><div id="tf-thumb"></div></div>
+      <div id="tf-tip">← 滑动屏幕，见证变身 →</div>
+    </div>
+
+    <div id="tune" class="hidden">
+      <div id="tune-stage">
+        <img id="tune-bg" alt="调味底图">
+        <img id="tune-char" alt="小野人">
+        <div id="tune-sliders"></div>
+        <p id="tune-react" aria-live="polite"></p>
+        <button id="tune-confirm" aria-label="确认口味，进入匹配"></button>
+      </div>
+    </div>
+
+    <img id="act4-char" class="hidden" alt="小野人">
+    <img id="act6-char" class="hidden" alt="小野人">
+    <div id="match" class="hidden">
+      <div id="match-card">
+        <img id="match-badge" alt="徽章">
+        <h2 id="match-title"></h2>
+        <div id="match-display">
+          <img id="match-plinth" src="assets/scenes/f7.png" alt="">
+          <img id="match-char" alt="小野人">
+          <img id="match-product" alt="本命产品">
+        </div>
+        <p id="match-product-name"></p>
+        <div id="match-guide"><img id="match-guide-char" src="assets/scenes/e1.1.png" alt="小野人"><p id="match-comment"></p></div>
+        <p id="match-note">基于你的口味偏好推荐</p>
+        <div id="match-chenpi" class="hidden"></div>
+        <p id="match-more-label">也可以试试</p>
+        <div id="match-others"></div>
+      </div>
+      <div id="match-actions">
+        <button id="match-keep" class="big-btn">收下我的口味档案</button>
+        <button id="match-retune" class="plain-btn">我想再调调</button>
+      </div>
+    </div>
+
+    <div id="result" class="hidden">
+      <div id="result-scroll"><article id="result-fallback"></article><img id="result-preview" alt="口味档案"></div>
+      <div id="result-ops">
+        <button id="op-save">保存</button>
+        <button id="op-invite">邀请</button>
+        <button id="op-replay">重玩</button>
+      </div>
+      <button id="result-retry" class="plain-btn hidden">重新生成档案</button>
+<p id="result-tip">长按图片可保存到相册</p>
+    </div>
+
+    <div id="invite-guide" class="hidden">
+      <div id="invite-box">
+        <img id="invite-char" alt="小野人">
+        <p id="invite-text">先把口味档案图片保存下来，再转发给朋友，看看 TA 是什么口味～</p>
+        <textarea id="share-copy" readonly aria-label="分享文案"></textarea>
+<button id="invite-copy" class="plain-btn">复制文案</button>
+        <button id="invite-close" class="plain-btn">知道了</button>
+      </div>
+    </div>
+
+    <div id="toast" class="hidden"></div>
+  </div>
+
+  <script src="js/data.js?v=1024-r10"></script>
+  <script src="js/main.js?v=1024-r10"></script>
+</body>
+</html>

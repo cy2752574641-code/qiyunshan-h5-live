@@ -80,7 +80,7 @@
 
 /* 对话气泡（z文字框） */
 .dialogue {
-  background-image: url("../assets/ui/textbox.png");
+  background-image: url("../assets/ui/textbox.webp");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
@@ -97,7 +97,7 @@
 /* 玩家选项（z剧情选项框） */
 .choices { display: flex; flex-direction: column; gap: 12px; }
 .choice-btn {
-  background-image: url("../assets/ui/choice.png");
+  background-image: url("../assets/ui/choice.webp");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
@@ -117,7 +117,7 @@
 
 /* 主按钮（z主按钮） */
 .big-btn {
-  background-image: url("../assets/ui/btn.png");
+  background-image: url("../assets/ui/btn.webp");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
@@ -156,7 +156,7 @@
 }
 /* 交互提示（z短提示框） */
 #hint.strong {
-  background-image: url("../assets/ui/hint.png");
+  background-image: url("../assets/ui/hint.webp");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: center;
@@ -620,14 +620,14 @@
 .guide-hotspot span { left: -20%; top: 32%; font-size: 12px; }
 .hotspot-mode #hint { width: fit-content; max-width: 96%; margin: 0 auto; padding: 6px 12px; background: #fff9eb; color: #354b31; border: 1px solid #879478; border-radius: 4px; font-size: 12px; animation: none; }
 
-:root { --h5-release: 1024-r10; }
+:root { --h5-release: 1024-r11; }
 /* R10 */
 #badge,#chapter {display:none!important}
 #topbar {top:calc(env(safe-area-inset-top) + 8px);padding:0 14px;pointer-events:none}
 #logo {width:64px;height:auto;object-fit:contain;background:transparent}
 #stage[data-act="act7"] #topbar {display:none}
 #stage[data-act="act5"] #logo {width:54px}
-#act6-char[src$="e1.1.png"] {width:min(82vw,440px);height:auto;max-height:52%;bottom:19%}
+#act6-char[src$="e1.1.webp"] {width:min(82vw,440px);height:auto;max-height:52%;bottom:19%}
 #match-char {right:0;width:43%;height:54%;bottom:24%;object-position:center bottom}
 #tune-react {top:16.4%;left:9%;right:9%;font-size:clamp(12px,3.2vw,15px)}
 #tune-confirm {left:21.5%;width:60%}
@@ -653,9 +653,9 @@
 #stage[data-act="act4"] #tf-track {position:absolute;bottom:10%;width:76%;margin:0}
 #stage[data-act="act4"] #tf-tip {position:absolute;bottom:4%;font-size:13px;padding:5px 10px;background:#f6f0e3}
 /* 复用现有 UI 图，扩展背景尺寸抵消源图的上下留白。 */
-.choice-btn {background:#f6f0e3 url('../assets/ui/choice.png') center/100% 220% no-repeat;border:0;border-radius:0;padding:13px 24px 13px 34px;min-height:52px}
-.dialogue {background-image:url('../assets/ui/textbox.png');background-size:106% 240%;padding:12px 23px}
-#big-btn,#match-keep {background:var(--forest) url('../assets/ui/btn.png') center/100% 100% no-repeat;border:0;border-radius:0;min-height:48px;height:52px}
+.choice-btn {background:#f6f0e3 url('../assets/ui/choice.webp') center/100% 220% no-repeat;border:0;border-radius:0;padding:13px 24px 13px 34px;min-height:52px}
+.dialogue {background-image:url('../assets/ui/textbox.webp');background-size:106% 240%;padding:12px 23px}
+#big-btn,#match-keep {background:var(--forest) url('../assets/ui/btn.webp') center/100% 100% no-repeat;border:0;border-radius:0;min-height:48px;height:52px}
 #match {padding-top:calc(env(safe-area-inset-top) + 55px)}
 #match-display {height:clamp(245px,36dvh,330px);margin-top:3px}
 #match-product {left:3%;width:94%;height:83%;bottom:14%;object-position:center bottom;z-index:2}

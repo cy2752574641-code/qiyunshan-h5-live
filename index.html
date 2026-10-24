@@ -3,40 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-  <title>齐云山 H5 · 完整修复版 R10</title>
-  <link rel="stylesheet" href="css/base.css?v=1024-r10">
-  <link rel="stylesheet" href="css/scenes.css?v=1024-r10">
+  <title>齐云山 H5 · 完整修复版 R11</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/base.css?v=1024-r11">
+  <link rel="stylesheet" href="css/scenes.css?v=1024-r11">
 </head>
 <body>
-<div id="boot-status" role="status" style="position:fixed;inset:0;z-index:1000;background:#f6f0e3;color:#354b31;padding:12vh 24px;font:16px/1.7 sans-serif;white-space:pre-wrap;overflow:auto">正在启动齐云山 H5 · R10……</div>
+<div id="boot-status" role="status" style="position:fixed;inset:0;z-index:1000;background:#f6f0e3;color:#354b31;padding:12vh 24px;font:16px/1.7 sans-serif;white-space:pre-wrap;overflow:auto">正在启动齐云山 H5 · R11……</div>
 <script>
 (function(){
   var box=document.getElementById('boot-status'),failed=false;
-  window.h5BootError=function(message){failed=true;box.style.display='block';box.textContent='齐云山 H5 · R10 启动检查\n\n'+message+'\n\n请保留这条提示。index.html、css、js、assets 必须位于同一个项目目录中。';};
+  window.h5BootError=function(message){failed=true;box.style.display='block';box.textContent='齐云山 H5 · R11 启动检查\n\n'+message+'\n\n请保留这条提示。index.html、css、js、assets 必须位于同一个项目目录中。';};
   window.addEventListener('error',function(e){
     if(e.target && /^(SCRIPT|LINK)$/.test(e.target.tagName)) window.h5BootError('文件未能加载：'+(e.target.getAttribute('src')||e.target.getAttribute('href')));
     else if(e.message) window.h5BootError('脚本运行错误：'+e.message+'\n位置：'+(e.filename||'')+':'+(e.lineno||''));
   },true);
   window.h5FinishBoot=function(){
     if(failed)return;
-    if(getComputedStyle(document.documentElement).getPropertyValue('--h5-release').trim()!=='1024-r10'){window.h5BootError('css/scenes.css 未加载或不是 R10 版本。');return;}
+    if(getComputedStyle(document.documentElement).getPropertyValue('--h5-release').trim()!=='1024-r11'){window.h5BootError('css/scenes.css 未加载或不是 R10 版本。');return;}
     var img=new Image();
     img.onload=function(){if(!failed)box.style.display='none';};
-    img.onerror=function(){window.h5BootError('缺少素材：assets/scenes/a1.png。请将原项目的 assets 文件夹放在 index.html 旁边。');};
-    img.src='assets/scenes/a1.png';
+    img.onerror=function(){window.h5BootError('缺少素材：assets/scenes/a1.webp。请将原项目的 assets 文件夹放在 index.html 旁边。');};
+    img.src='assets/scenes/a1.webp';
   };
   setTimeout(function(){if(!window.H5_READY&&!failed)window.h5BootError('启动未完成，请检查 js/data.js 与 js/main.js 是否完整解压。');},8000);
 })();
 </script>
   <div id="stage">
     <div id="story-progress" aria-label="剧情进度"></div>
-    <img id="scene-leaf" src="assets/scenes/f8.png" alt="" class="hidden">
+    <img id="scene-leaf" src="assets/scenes/f8.webp" alt="" class="hidden">
     <div id="scene" class="scene"></div>
 
     <header id="topbar">
       <div class="brand">
-        <img width="46" height="26" id="logo" src="assets/logo.png" alt="齐云山">
-        <span id="badge">1023 · R10</span>
+        <img width="46" height="26" id="logo" src="assets/logo.webp" alt="齐云山">
+        <span id="badge">1023 · R11</span>
       </div>
       <div id="chapter">01｜遇见</div>
     </header>
@@ -97,12 +98,12 @@
         <img id="match-badge" alt="徽章">
         <h2 id="match-title"></h2>
         <div id="match-display">
-          <img id="match-plinth" src="assets/scenes/f7.png" alt="">
+          <img id="match-plinth" src="assets/scenes/f7.webp" alt="">
           <img id="match-char" alt="小野人">
           <img id="match-product" alt="本命产品">
         </div>
         <p id="match-product-name"></p>
-        <div id="match-guide"><img id="match-guide-char" src="assets/scenes/e1.1.png" alt="小野人"><p id="match-comment"></p></div>
+        <div id="match-guide"><img id="match-guide-char" src="assets/scenes/e1.1.webp" alt="小野人"><p id="match-comment"></p></div>
         <p id="match-note">基于你的口味偏好推荐</p>
         <div id="match-chenpi" class="hidden"></div>
         <p id="match-more-label">也可以试试</p>
@@ -138,7 +139,7 @@
     <div id="toast" class="hidden"></div>
   </div>
 
-  <script src="js/data.js?v=1024-r10"></script>
-  <script src="js/main.js?v=1024-r10"></script>
+  <script src="js/data.js?v=1024-r11"></script>
+  <script src="js/main.js?v=1024-r11"></script>
 </body>
 </html>

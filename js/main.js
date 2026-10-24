@@ -1,4 +1,4 @@
-if (window.H5_DATA_VERSION !== "1024-r10") throw new Error("js/data.js 版本不匹配，请完整替换本次代码包。");
+if (window.H5_DATA_VERSION !== "1024-r11") throw new Error("js/data.js 版本不匹配，请完整替换本次代码包。");
 /* 齐云山 H5 · 分幕叙事引擎（七幕完整版） */
 const $ = (id) => document.getElementById(id);
 
@@ -12,6 +12,50 @@ let guideClicks = 0;
 let eggTimer;
 let eggPhase=0;
 let tuneReactionTimer;
+
+// ---- 素材预加载：当前幕优先、下一幕适量，避免切幕缺图 ----
+const ACT_ORDER = ['act1', 'act2', 'act3', 'act4', 'act5', 'act6', 'act7'];
+const preloadCache = new Map();
+function preload(src) {
+  if (!src) return;
+  if (preloadCache.has(src)) return;
+  preloadCache.set(src, null);
+  const img = new Image();
+  img.onload = () => preloadCache.set(src, true);
+  img.onerror = () => preloadCache.set(src, false); // 失败不阻塞，渲染层已有底色兜底
+  img.src = src;
+}
+function actImages(actKey) {
+  const out = new Set();
+  const addScene = (n) => n && out.add('assets/scenes/' + n);
+  const addProduct = (n) => n && out.add('assets/products/' + n);
+  const addResult = (n) => n && out.add('assets/result/' + n);
+  (SCRIPT[actKey].steps || []).forEach((s) => {
+    if (actKey !== 'act7') addScene(s.bg); // act7 的 bg 指向 result 目录背景，非场景底图
+    addScene(s.char); addScene(s.replyBg); addScene(s.replyChar);
+    (s.replyScenes || []).forEach((r) => { addScene(r.bg); addScene(r.char); });
+    (s.options || []).forEach((o) => {
+      addScene(o.replyBg); addScene(o.replyChar);
+      (o.replyScenes || []).forEach((r) => addScene(r.bg));
+    });
+  });
+  if (actKey === 'act4') { ['fruit-green.webp', 'fruit-ripe.webp', 'fruit-overripe.webp', 'cake.webp'].forEach(addScene); addProduct('product-original.webp'); }
+  if (actKey === 'act5') { Object.keys(ACT5_BOUNDS).forEach(addScene); }
+  if (actKey === 'act6') {
+    Object.keys(RECOMMEND).forEach((k) => { addResult(RECOMMEND[k].badge); addProduct(RECOMMEND[k].img); (RECOMMEND[k].secondary || []).forEach((s2) => addProduct(s2.img)); });
+    addProduct('product-chenpi.webp');
+  }
+  if (actKey === 'act7') {
+    ['g1背景.webp', 'g2档案卡底板.webp', 'g3人物.webp', 'g4人物.webp', 'g5人物.webp', 'g6徽章.webp', 'g7徽章.webp', 'g8徽章.webp'].forEach(addResult);
+    ['product-lemon.webp', 'product-mango.webp', 'product-original.webp'].forEach(addProduct);
+    preload('assets/logo.webp');
+  }
+  return [...out];
+}
+function preloadActChain(actKey) {
+  const i = ACT_ORDER.indexOf(actKey);
+  [actKey, ACT_ORDER[i + 1]].filter(Boolean).forEach((a) => actImages(a).forEach(preload));
+}
 
 function setBg(name) {
   if (!name) return;
@@ -138,7 +182,7 @@ function showEggOffer() {
  const button=hotspot('丢个鸡蛋',24,60,24,15,()=>{
   if(eggPhase!==1)return;
   eggPhase=2;layer.classList.add('hidden');dialoguePages=[];
-  setBg('b5.2.jpg');showDialogue('小野人','……？！');showHint('点击看看他的反应');
+  setBg('b5.2.webp');showDialogue('小野人','……？！');showHint('点击看看他的反应');
  });button.id='throw-egg';
  showHint('点击鸡蛋逗逗他，或点击别处继续');
 }
@@ -159,6 +203,7 @@ function enterAct(to, step = 0) {
   replyQueue = [];
   $('chapter').textContent = SCRIPT[to].title;
   render();
+  preloadActChain(to);
 }
 
 function render() {
@@ -196,13 +241,13 @@ function render() {
 // 第五幕：底图 + 人物 + 控件共用一个等比画布坐标系
 function renderAct5(s) {
   $('tune').classList.remove('hidden');
-  $('tune-bg').src = 'assets/scenes/e1.2.png';
+  $('tune-bg').src = 'assets/scenes/e1.2.webp';
   $('tune-react').classList.remove('is-dialogue');
   if (s.type === 'tune') {
     showTune(s);
   } else if (s.type === 'say') {
     setAct5Controls(false);
-    showAct5Char(s.char || 'e2.png');
+    showAct5Char(s.char || 'e2.webp');
     showAct5Speech(s.text);
   } else if (s.type === 'scene') {
     setAct5Controls(false);
@@ -220,7 +265,7 @@ function showAct4Char(src) {
   else { c.classList.add('hidden'); }
 }
 function renderAct4(s) {
-  setBg(s.bg || 'd6.png');
+  setBg(s.bg || 'd6.webp');
   showAct4Char(s.char);
   switch (s.type) {
     case 'title':     showTitle(s.title, s.sub); showHint('继续'); break;
@@ -234,9 +279,9 @@ function renderAct4(s) {
 
 // 第六幕：背景、人物、产品分别使用，透明立绘不可作为整屏背景。
 function renderAct6(s) {
-  setBg('f1.png');
+  setBg('f1.webp');
   if(s.type==='match') { showMatch(s); return; }
-  const char=$('act6-char');char.src='assets/scenes/'+(s.char || 'e1.1.png');char.classList.remove('hidden');
+  const char=$('act6-char');char.src='assets/scenes/'+(s.char || 'e1.1.webp');char.classList.remove('hidden');
   showDialogue('小野人',s.text);
   showHint('点击继续');
 }
@@ -244,10 +289,10 @@ function renderAct6(s) {
 // ---- 第四幕 · 滑动变身 ----
 let tfDone = false;
 function showTransform(s) {
-  const fruitMap = { green: 'fruit-green.png', ripe: 'fruit-ripe.png', overripe: 'fruit-overripe.png' };
-  $('tf-fruit').src = 'assets/scenes/' + (fruitMap[state.pick] || 'fruit-ripe.png');
-  $('tf-cake').src = 'assets/scenes/cake.png';
-  $('tf-product').src = 'assets/products/product-original.png';
+  const fruitMap = { green: 'fruit-green.webp', ripe: 'fruit-ripe.webp', overripe: 'fruit-overripe.webp' };
+  $('tf-fruit').src = 'assets/scenes/' + (fruitMap[state.pick] || 'fruit-ripe.webp');
+  $('tf-cake').src = 'assets/scenes/cake.webp';
+  $('tf-product').src = 'assets/products/product-original.webp';
   $('tf-caption').textContent = s.text || '从山野果实，到酸甜韧滑的一口好味道。';
   tfDone = false;
   $('tf-tip').textContent = '← 滑动屏幕，见证变身 →';
@@ -258,7 +303,7 @@ function showTransform(s) {
 function updateTransform(p) {
   p = Math.max(0, Math.min(1, p));
   const inner = Math.max(1, $('tf-track').clientWidth - 12);
-  // 背景已固定为 d6，不再随进度切换；舞台内按 果实→糕体→产品 三段推进（原 d3.jpg 已删除）
+  // 背景已固定为 d6，不再随进度切换；舞台内按 果实→糕体→产品 三段推进（原 d3.webp 已删除）
   $('tf-fruit').style.opacity = (p < 0.34 ? 1 : 0);
   $('tf-cake').style.opacity = (p >= 0.34 && p < 0.68 ? 1 : 0);
   $('tf-product').style.opacity = (p >= 0.68 ? 1 : 0);
@@ -345,13 +390,13 @@ function showTune(s) {
 // 唯一的小野人图层：只存在于 #tune-stage 内，右侧留白区（不遮挡标题/装置/滑轨/木牌）
 // 按透明图内人物实际边界归一化，不裁改原素材。
 const ACT5_BOUNDS = {
-'e1.1.png':[1330,1182,135,23,1182,1148],
-'e2.png':[1396,1127,237,26,1149,1098],
-'e3.png':[1396,1127,283,33,1165,1090],
-'e4.png':[1396,1127,324,24,1169,1102],
-'e6.png':[1396,1127,333,19,1180,1106],
-'e7.png':[1355,1160,232,18,1175,1137],
-'e8.png':[1396,1127,315,15,1177,1117],
+'e1.1.webp':[1330,1182,135,23,1182,1148],
+'e2.webp':[1396,1127,237,26,1149,1098],
+'e3.webp':[1396,1127,283,33,1165,1090],
+'e4.webp':[1396,1127,324,24,1169,1102],
+'e6.webp':[1396,1127,333,19,1180,1106],
+'e7.webp':[1355,1160,232,18,1175,1137],
+'e8.webp':[1396,1127,315,15,1177,1117],
 };
 
 const act5Preloads = Object.keys(ACT5_BOUNDS).map(src => {
@@ -360,7 +405,7 @@ const act5Preloads = Object.keys(ACT5_BOUNDS).map(src => {
 function showAct5Char(src) {
   const el = $('tune-char');
   if (!src) { el.classList.add('hidden'); return; }
-  const [w,h,x1,y1,x2,y2] = ACT5_BOUNDS[src] || ACT5_BOUNDS['e2.png'];
+  const [w,h,x1,y1,x2,y2] = ACT5_BOUNDS[src] || ACT5_BOUNDS['e2.webp'];
   const scale = 24 / (y2-y1); // 可见人物高：画布高度的24%
   const xScale = scale * IMG_H / IMG_W;
   el.style.width = w * xScale + '%';
@@ -382,32 +427,32 @@ function setTuneReact(f, activeKey) {
   clearTimeout(tuneReactionTimer);
   if (!activeKey) {
     $('tune-react').textContent='来，酸、甜、韧、滑，随你喜欢怎么调。';
-    showAct5Char('e1.1.png'); return;
+    showAct5Char('e1.1.webp'); return;
   }
   const key=activeKey;
   let t, expr;
   if (key === 'sour') {
-    if (sour >= 95) { t = '……我好像看见，声音了？'; expr = 'e4.png'; }
-    else if (sour >= 80) { t = '等等……你这口味有点东西啊。'; expr = 'e4.png'; }
-    else if (sour >= 60) { t = '哦？还在往上加？'; expr = 'e2.png'; }
-    else { t = '酸一点，还是再收一点？'; expr = 'e1.1.png'; }
+    if (sour >= 95) { t = '……我好像看见，声音了？'; expr = 'e4.webp'; }
+    else if (sour >= 80) { t = '等等……你这口味有点东西啊。'; expr = 'e4.webp'; }
+    else if (sour >= 60) { t = '哦？还在往上加？'; expr = 'e2.webp'; }
+    else { t = '酸一点，还是再收一点？'; expr = 'e1.1.webp'; }
   } else if (key === 'sweet') {
-    if (Math.abs(sweet-sour) <= 10) { t = '酸甜都想要？懂了，你是来享受的。'; expr = 'e8.png'; }
-    else { t = sweet > sour ? '看来你对甜味的偏爱，根本不打算藏。' : '甜一点，还是再收一点？'; expr = sweet > sour ? 'e3.png' : 'e1.1.png'; }
+    if (Math.abs(sweet-sour) <= 10) { t = '酸甜都想要？懂了，你是来享受的。'; expr = 'e8.webp'; }
+    else { t = sweet > sour ? '看来你对甜味的偏爱，根本不打算藏。' : '甜一点，还是再收一点？'; expr = sweet > sour ? 'e3.webp' : 'e1.1.webp'; }
   } else if (key === 'chewy') {
     t = chewy >= 80 ? '这么喜欢有嚼劲的？我想起个东西……' : '喜欢有嚼劲，还是轻松好嚼？';
-    expr = chewy >= 80 ? 'e6.png' : 'e1.1.png';
+    expr = chewy >= 80 ? 'e6.webp' : 'e1.1.webp';
   } else if (key === 'smooth') {
     t = smooth >= 80 ? '刚才想说什么来着……哦，滑过去了。' : '顺口的感觉，也由你来调。';
-    expr = smooth >= 80 ? 'e7.png' : 'e1.1.png';
+    expr = smooth >= 80 ? 'e7.webp' : 'e1.1.webp';
   } else {
-    t = '酸甜都想要？懂了，你是来享受的。'; expr = 'e8.png';
+    t = '酸甜都想要？懂了，你是来享受的。'; expr = 'e8.webp';
   }
   $('tune-react').textContent = t;
   showAct5Char(expr);
   tuneReactionTimer=setTimeout(()=>{
     if(state.act==='act5' && SCRIPT.act5.steps[state.step].type==='tune') {
-      showAct5Char('e1.1.png'); $('tune-react').textContent='口味记下了，还可以继续微调。';
+      showAct5Char('e1.1.webp'); $('tune-react').textContent='口味记下了，还可以继续微调。';
     }
   },2000);
 }
@@ -424,7 +469,7 @@ function showMatch(s) {
   const r = recommend(f);
   $('match-badge').src = 'assets/result/' + r.badge;
   $('match-title').textContent = '「' + r.title + '」';
-  $('match-char').src = 'assets/scenes/e1.1.png';
+  $('match-char').src = 'assets/scenes/e1.1.webp';
   const productSrc='assets/products/' + r.img;
   $('match-product').src=productSrc;
   loadProduct(productSrc).then(img=>{if(state.act==='act6' && recommend(state.flavor)===r && img instanceof HTMLCanvasElement) $('match-product').src=img.toDataURL('image/png');}).catch(()=>{});
@@ -435,7 +480,7 @@ function showMatch(s) {
   if (f.chewy >= 80) {
     $('match-chenpi').classList.remove('hidden');
     $('match-chenpi').innerHTML =
-      `<img src="assets/products/product-chenpi.png" alt="陈皮南酸枣粒">` +
+      `<img src="assets/products/product-chenpi.webp" alt="陈皮南酸枣粒">` +
       `<span>额外尝鲜 · 陈皮南酸枣粒<br><small>高韧偏好彩蛋，不影响主推荐。</small></span>`;
   } else {
     $('match-chenpi').classList.add('hidden');
@@ -559,15 +604,22 @@ function drawResult(ctx,o) {
 
 
 let resultAssetsPromise;
+function isFileProtocol() { return location.protocol === 'file:'; }
 function ensureResultAssets() {
- if(window.H5_RESULT_ASSETS)return Promise.resolve();
- if(resultAssetsPromise)return resultAssetsPromise;
- resultAssetsPromise=new Promise((resolve,reject)=>{
-  const script=document.createElement('script');script.src='js/result-assets.js?v=1024-r10';
-  const timer=setTimeout(()=>{script.remove();resultAssetsPromise=null;reject(new Error('素材加载超时'));},20000);
-  script.onload=()=>{clearTimeout(timer);productImageCache.clear();resolve();};
-  script.onerror=()=>{clearTimeout(timer);script.remove();resultAssetsPromise=null;reject(new Error('素材加载失败'));};document.head.appendChild(script);
- });return resultAssetsPromise;
+ // HTTP/HTTPS（含 GitHub Pages）：分享卡直接加载同站压缩图片，不再下载整份内嵌资源包；
+ // 仅在 file://（本地双击）加载 result-assets.js，用 data URI 避免画布被本地文件污染。
+ if (!isFileProtocol()) return Promise.resolve();
+ if (window.H5_RESULT_ASSETS) return Promise.resolve();
+ if (resultAssetsPromise) return resultAssetsPromise;
+ resultAssetsPromise = new Promise((resolve, reject) => {
+  const script = document.createElement('script');
+  script.src = 'js/result-assets.js?v=1024-r11';
+  const timer = setTimeout(() => { script.remove(); resultAssetsPromise = null; reject(new Error('素材加载超时')); }, 20000);
+  script.onload = () => { clearTimeout(timer); productImageCache.clear(); resolve(); };
+  script.onerror = () => { clearTimeout(timer); script.remove(); resultAssetsPromise = null; reject(new Error('素材加载失败')); };
+  document.head.appendChild(script);
+ });
+ return resultAssetsPromise;
 }
 function showResultFallback(f,r) {
  const panel=$('result-fallback');panel.replaceChildren();
@@ -587,10 +639,12 @@ async function showResult(s) {
  try {
   await ensureResultAssets();
   if(document.fonts)await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,1500))]);
-  const paths=['assets/result/g1背景.png','assets/result/g2档案卡底板.png','assets/result/'+r.badge,'assets/result/'+CHARACTER.archive,'assets/products/'+r.img,'assets/logo.png'];
+  const paths=['assets/result/g1背景.webp','assets/result/g2档案卡底板.webp','assets/result/'+r.badge,'assets/result/'+CHARACTER.archive,'assets/products/'+r.img,'assets/logo.webp'];
   const images=await Promise.all(paths.map((src,i)=>(i===4?loadProduct(src):loadImage(src)).catch(()=>null)));
   if(generation!==resultGeneration||state.act!=='act7')return;
-  if(!images[4])throw new Error('产品图片未加载');
+  // 关键图层缺一即视为生成失败，交给重试，而不是用“成功”提示掩盖缺图。
+  const missing=['背景','档案卡底板','徽章','人物','产品图','Logo'].filter((m,i)=>!images[i]);
+  if(missing.length)throw new Error('缺少素材：'+missing.join('、'));
   const canvas=document.createElement('canvas');canvas.width=1500;canvas.height=2668;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas不可用');ctx.scale(2,2);
   drawResult(ctx,{bg:images[0],card:images[1],badge:images[2],ch:images[3],prod:images[4],logo:images[5],f,r});
   const url=canvas.toDataURL('image/png');$('result-preview').src=url;window._resultCanvas=canvas;
@@ -685,7 +739,7 @@ $('stage').addEventListener('click', (e) => {
   if (e.target.closest('#match, #result, #product-view, #scene-hotspots')) return;
   if(state.act==='act3' && state.step===2) return;
   if (!$('dialogue').classList.contains('hidden') && dialoguePages.length) { $('text').textContent = dialoguePages.shift(); return; }
-  if(eggPhase===2){eggPhase=3;dialoguePages=[];setBg('b5.3.jpg');showDialogue('小野人','好好好，夸自己一句也不行？');showHint('点击继续旅程');return;}
+  if(eggPhase===2){eggPhase=3;dialoguePages=[];setBg('b5.3.webp');showDialogue('小野人','好好好，夸自己一句也不行？');showHint('点击继续旅程');return;}
   if(eggPhase===1||eggPhase===3){eggPhase=0;$('scene-hotspots').classList.add('hidden');dialoguePages=[];}
   if (replyShown) { if(replyQueue.length) { showNextReply(); return; } replyShown = false; advance(); return; }
   const s = SCRIPT[state.act].steps[state.step];
@@ -700,6 +754,7 @@ $('big-btn').addEventListener('click', () => advance());
 // 启动
 $('chapter').textContent = SCRIPT[state.act].title;
 render();
+preloadActChain(state.act);
 
 window.H5_READY = true;
 if (window.h5FinishBoot) window.h5FinishBoot();

@@ -12,6 +12,7 @@ let guideClicks = 0;
 let eggTimer;
 let eggPhase=0;
 let tuneReactionTimer;
+let playSfx = () => {}; // 点击音效入口（initSfx 初始化后替换）；空实现保证音效不可用也不阻断剧情
 
 // ---- 素材预加载：当前幕优先、下一幕适量，避免切幕缺图 ----
 const ACT_ORDER = ['act1', 'act2', 'act3', 'act4', 'act5', 'act6', 'act7'];
@@ -152,6 +153,7 @@ function showButton(label) { const b = $('big-btn'); b.textContent = label; b.cl
 function showEnd(text) { $('end-card').querySelector('p').textContent = text; $('end-card').classList.remove('hidden'); }
 
 function choose(o) {
+  playSfx('confirm'); // 选择剧情选项 / 选果：确认音
   if (o.pick) { state.pick = o.pick; state.flavor = { ...FLAVOR_INIT[o.pick] }; }
   hideAll();
   replyQueue = (o.replyScenes || [{bg: o.replyBg, char: o.replyChar, text: o.reply}]).slice();
@@ -188,12 +190,12 @@ function showEggOffer() {
 }
 
 let lastAdvance = 0;
-function advance() {
+function advance(sfxKind) {
   const now = Date.now();
   if (now - lastAdvance < 200) return; // 连续点击防抖，避免重复跳幕
   lastAdvance = now;
   const steps = SCRIPT[state.act].steps;
-  if (state.step + 1 < steps.length) { state.step++; render(); }
+  if (state.step + 1 < steps.length) { state.step++; playSfx(sfxKind || 'advance'); render(); }
 }
 
 function enterAct(to, step = 0) {
@@ -459,7 +461,7 @@ function setTuneReact(f, activeKey) {
 
 $('tune-confirm').addEventListener('click', (e) => {
   e.stopPropagation();
-  if (state.act === 'act5' && SCRIPT.act5.steps[state.step].type === 'tune') advance();
+  if (state.act === 'act5' && SCRIPT.act5.steps[state.step].type === 'tune') advance('confirm'); // 确认口味：确认音
 });
 
 // ---- 第六幕 · 匹配（本命推荐）----
@@ -738,10 +740,10 @@ $('stage').addEventListener('click', (e) => {
   if (e.target.closest('.choice-btn') || e.target.closest('.big-btn')) return;
   if (e.target.closest('#match, #result, #product-view, #scene-hotspots')) return;
   if(state.act==='act3' && state.step===2) return;
-  if (!$('dialogue').classList.contains('hidden') && dialoguePages.length) { $('text').textContent = dialoguePages.shift(); return; }
+  if (!$('dialogue').classList.contains('hidden') && dialoguePages.length) { $('text').textContent = dialoguePages.shift(); playSfx('advance'); return; } // 补全文字：对白推进音
   if(eggPhase===2){eggPhase=3;dialoguePages=[];setBg('b5.3.webp');showDialogue('小野人','好好好，夸自己一句也不行？');showHint('点击继续旅程');return;}
   if(eggPhase===1||eggPhase===3){eggPhase=0;$('scene-hotspots').classList.add('hidden');dialoguePages=[];}
-  if (replyShown) { if(replyQueue.length) { showNextReply(); return; } replyShown = false; advance(); return; }
+  if (replyShown) { if(replyQueue.length) { showNextReply(); playSfx('advance'); return; } replyShown = false; advance(); return; } // 推进下一句：对白推进音
   const s = SCRIPT[state.act].steps[state.step];
   if (s.type === 'transform') { if (tfDone) advance(); return; }
   if (s.type === 'choice' || s.type === 'button' || s.type === 'end') return;
@@ -808,6 +810,114 @@ $('big-btn').addEventListener('click', () => advance());
   if (bgm) bgm.addEventListener('error', () => {
     if (toggle) toggle.classList.add('hidden');
   }, true);
+
+  reflect();
+})();
+
+// ---- 点击音效：Web Audio 合成（对白推进「嗒」+ 选项确认「啵」），无外部音频 ----
+(function initSfx() {
+  const CFG = { storeKey: 'qiyunshan-sfx-enabled', throttleMs: 30 }; // 独立开关记忆键 + 连点节流
+  let ctx = null, lastPlay = 0;
+  let enabled = loadPref();
+  const toggle = $('sfx-toggle');
+
+  function loadPref() {
+    try { const v = localStorage.getItem(CFG.storeKey); return v === null ? true : v === '1'; }
+    catch { return true; }
+  }
+  function savePref(on) { try { localStorage.setItem(CFG.storeKey, on ? '1' : '0'); } catch {} }
+
+  // 复用一个 AudioContext，点击时初始化或恢复
+  function ensureCtx() {
+    if (ctx) {
+      if (ctx.state === 'suspended') { try { ctx.resume().catch(() => {}); } catch {} }
+      return ctx;
+    }
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    } catch { return null; }
+    return ctx;
+  }
+
+  function reflect() {
+    if (!toggle) return;
+    toggle.classList.toggle('off', !enabled);
+    toggle.setAttribute('aria-pressed', String(enabled));
+    toggle.setAttribute('aria-label', enabled ? '关闭音效' : '开启音效');
+  }
+
+  // 单个振荡器 + 增益包络：短淡入 + 平滑淡出，避免爆音
+  function tone(type, freq, t0, dur, peak, freqEnd) {
+    const c = ctx;
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (freqEnd && freqEnd !== freq) osc.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), t0 + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(c.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+
+  // 极短带通噪声瞬态：木质「嗒」的敲击质感
+  function noiseTap(t0, dur, peak, freq) {
+    const c = ctx;
+    const len = Math.max(1, Math.floor(c.sampleRate * (dur + 0.02)));
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(); src.buffer = buf;
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = 0.9;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak), t0 + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(bp); bp.connect(g); g.connect(c.destination);
+    src.start(t0); src.stop(t0 + dur + 0.02);
+  }
+
+  function play(kind) {
+    if (!enabled) return;
+    const now = performance.now();
+    if (now - lastPlay < CFG.throttleMs) return; // 限制快速连点造成的声音叠加
+    lastPlay = now;
+    const c = ensureCtx();
+    if (!c) return; // 不支持或初始化失败：静默降级，不阻断剧情
+    const t0 = c.currentTime + 0.001;
+    try {
+      if (kind === 'confirm') {
+        // 轻巧「啵」：正弦 620→260Hz，约 0.18s
+        tone('sine', 620, t0, 0.18, 0.20, 260);
+        tone('sine', 930, t0, 0.12, 0.07, 470);
+      } else {
+        // 柔和木质「嗒」：低频主体 + 极短噪声瞬态，约 0.1s
+        tone('sine', 185, t0, 0.09, 0.16, 150);
+        noiseTap(t0, 0.016, 0.08, 1100);
+      }
+    } catch (err) { /* 音效异常不阻断剧情 */ }
+  }
+
+  playSfx = play; // 交给剧情交互点调用
+
+  // 首次交互预热/恢复（仅在开启时）
+  ['pointerdown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => { if (enabled) ensureCtx(); }, { passive: true })
+  );
+
+  // 独立音效开关：与背景音乐互不影响；阻止冒泡，避免误触剧情
+  toggle && toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    enabled = !enabled;
+    savePref(enabled);
+    if (enabled) play('confirm'); // 开启时即时反馈
+    reflect();
+  });
+  toggle && toggle.addEventListener('pointerdown', (e) => e.stopPropagation());
+  toggle && toggle.addEventListener('touchstart', (e) => e.stopPropagation());
 
   reflect();
 })();

@@ -53,3 +53,32 @@ body {
   transform: rotate(-45deg);
   border-radius: 2px;
 }
+
+/* 音效开关：与音乐开关同款式，位于其左侧，图标与语义清楚区分 */
+#sfx-toggle {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 12px);
+  right: 66px;
+  z-index: 60;
+  width: 44px; height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(47, 93, 58, .62);
+  color: var(--cream);
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
+}
+#sfx-toggle.off { opacity: .5; }
+#sfx-toggle.off::after {
+  content: '';
+  position: absolute;
+  width: 26px; height: 2px;
+  background: var(--cream);
+  transform: rotate(-45deg);
+  border-radius: 2px;
+}

@@ -751,6 +751,67 @@ $('stage').addEventListener('click', (e) => {
 
 $('big-btn').addEventListener('click', () => advance());
 
+// ---- 背景音乐：集中配置 + 首次交互播放 + 记住开关 + 前后台暂停/恢复 ----
+(function initBgm() {
+  const bgm = $('bgm'), toggle = $('bgm-toggle');
+  const CFG = { volume: 0.25, storeKey: 'qiyunshan-bgm-enabled' }; // 集中配置：默认音量 / 开关记忆键
+  let enabled = loadPref();
+
+  function loadPref() {
+    try { const v = localStorage.getItem(CFG.storeKey); return v === null ? true : v === '1'; }
+    catch { return true; }
+  }
+  function savePref(on) {
+    try { localStorage.setItem(CFG.storeKey, on ? '1' : '0'); } catch {}
+  }
+
+  if (bgm) { bgm.volume = CFG.volume; bgm.loop = true; bgm.muted = !enabled; } // 初始即反映记忆的开关状态
+
+  function reflect() {
+    if (!toggle) return;
+    toggle.classList.toggle('off', !enabled);
+    toggle.setAttribute('aria-pressed', String(enabled));
+    toggle.setAttribute('aria-label', enabled ? '关闭背景音乐' : '开启背景音乐');
+  }
+
+  function tryPlay() {
+    if (!enabled || !bgm || !bgm.paused) return; // 关闭后剧情点击不会重新开启
+    const p = bgm.play();
+    if (p && p.catch) p.catch(() => {}); // 未解锁/加载中：下次交互再试
+  }
+
+  // 首次有效交互解锁播放（仅在开启状态下）
+  ['pointerdown', 'touchstart', 'click'].forEach(ev =>
+    document.addEventListener(ev, tryPlay, { passive: true })
+  );
+
+  // 音乐开关：阻止冒泡，避免触发剧情推进或误开音乐
+  toggle && toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    enabled = !enabled;
+    savePref(enabled);
+    if (bgm) bgm.muted = !enabled;   // muted 切换，不打断播放
+    if (enabled) tryPlay();
+    reflect();
+  });
+  toggle && toggle.addEventListener('pointerdown', (e) => e.stopPropagation());
+  toggle && toggle.addEventListener('touchstart', (e) => e.stopPropagation());
+
+  // 页面后台暂停；回前台仅在开启时尝试恢复
+  document.addEventListener('visibilitychange', () => {
+    if (!bgm) return;
+    if (document.hidden) { if (!bgm.paused) bgm.pause(); }
+    else if (enabled) { if (bgm.paused) tryPlay(); }
+  });
+
+  // 播放失败不阻断剧情：隐藏开关，反映真实不可用状态
+  if (bgm) bgm.addEventListener('error', () => {
+    if (toggle) toggle.classList.add('hidden');
+  }, true);
+
+  reflect();
+})();
+
 // 启动
 $('chapter').textContent = SCRIPT[state.act].title;
 render();

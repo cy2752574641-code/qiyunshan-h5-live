@@ -24,3 +24,32 @@ body {
 }
 
 .hidden { display: none !important; }
+
+/* 背景音乐开关（浮动于右上角，始终可点） */
+#bgm-toggle {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 12px);
+  right: 14px;
+  z-index: 60;
+  width: 44px; height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(47, 93, 58, .62);
+  color: var(--cream);
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
+}
+#bgm-toggle.off { opacity: .5; }
+#bgm-toggle.off::after {
+  content: '';
+  position: absolute;
+  width: 26px; height: 2px;
+  background: var(--cream);
+  transform: rotate(-45deg);
+  border-radius: 2px;
+}
